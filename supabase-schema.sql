@@ -77,14 +77,27 @@ ALTER TABLE session_titles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE swipes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE watch_history ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "allow_all_sessions" ON sessions;
+DROP POLICY IF EXISTS "allow_all_preferences" ON preferences;
+DROP POLICY IF EXISTS "allow_all_titles" ON session_titles;
+DROP POLICY IF EXISTS "allow_all_swipes" ON swipes;
+DROP POLICY IF EXISTS "allow_all_history" ON watch_history;
+
 CREATE POLICY "allow_all_sessions" ON sessions FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "allow_all_preferences" ON preferences FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "allow_all_titles" ON session_titles FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "allow_all_swipes" ON swipes FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "allow_all_history" ON watch_history FOR ALL USING (true) WITH CHECK (true);
 
--- Enable Realtime on key tables
-ALTER PUBLICATION supabase_realtime ADD TABLE sessions;
-ALTER PUBLICATION supabase_realtime ADD TABLE swipes;
-ALTER PUBLICATION supabase_realtime ADD TABLE session_titles;
-ALTER PUBLICATION supabase_realtime ADD TABLE preferences;
+-- Enable Realtime on key tables. ALTER PUBLICATION has no IF NOT EXISTS,
+-- so swallow the duplicate_object error to keep this script re-runnable.
+DO $$
+DECLARE t TEXT;
+BEGIN
+  FOREACH t IN ARRAY ARRAY['sessions', 'swipes', 'session_titles', 'preferences'] LOOP
+    BEGIN
+      EXECUTE format('ALTER PUBLICATION supabase_realtime ADD TABLE %I', t);
+    EXCEPTION WHEN duplicate_object THEN NULL;
+    END;
+  END LOOP;
+END $$;

@@ -61,13 +61,15 @@ Return ONLY valid JSON (no markdown):
 }
 
 export async function callGemini(apiKey, prompt) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { temperature: 0.3, maxOutputTokens: 600 },
+      // Budget covers thinking tokens as well as the answer, so it needs
+      // far more headroom than the ~200-token JSON brief alone suggests.
+      generationConfig: { temperature: 0.3, maxOutputTokens: 2048 },
     }),
   })
   if (!res.ok) throw new Error(`Gemini ${res.status}: ${await res.text()}`)
@@ -97,7 +99,9 @@ export async function fetchFromTMDB(brief, tmdbKey, seenIds = []) {
         with_original_language: lang,
         page: '1',
       })
-      if (brief.genres?.length) p.set('with_genres', brief.genres.slice(0, 3).join(','))
+      // '|' is OR in TMDB; ',' is AND. The two partners' moods map to
+      // different genres, so AND would demand one title be all of them.
+      if (brief.genres?.length) p.set('with_genres', brief.genres.slice(0, 3).join('|'))
       if (era) {
         const d = ERA_DATES[era] || {}
         if (isTV) {

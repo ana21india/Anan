@@ -11,7 +11,7 @@ app.use(cors())
 app.use(express.json())
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-const geminiModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+const geminiModel = genAI.getGenerativeModel({ model: 'gemini-3.6-flash' })
 const TMDB_KEY = process.env.TMDB_API_KEY
 const RAPID_KEY = process.env.RAPIDAPI_KEY
 const TMDB_BASE = 'https://api.themoviedb.org/3'
