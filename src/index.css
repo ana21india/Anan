@@ -1,0 +1,106 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0a0a12;
+  --surface: #131326;
+  --border: #252548;
+  --primary: #7c3aed;
+  --like: #10b981;
+  --pass: #ef4444;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  overscroll-behavior: none;
+}
+
+body {
+  background-color: var(--bg);
+  color: white;
+  font-family: 'Inter', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Prevent pull-to-refresh on mobile during swipe */
+.swipe-container {
+  touch-action: pan-y;
+  overscroll-behavior: contain;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 2px;
+}
+
+/* Chip / tag component */
+.chip {
+  @apply inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium cursor-pointer transition-all duration-200 select-none border;
+}
+
+.chip-inactive {
+  @apply bg-surface border-border text-white/50 hover:border-primary/50 hover:text-white/80;
+}
+
+.chip-active {
+  @apply bg-primary/20 border-primary text-primary;
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #a78bfa, #6366f1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Card shadows */
+.card-shadow {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255,255,255,0.05);
+}
+
+/* Platform badge styles */
+.platform-badge {
+  @apply flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold;
+}
+
+/* Loading dots */
+@keyframes bounce-dot {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+.loading-dot {
+  animation: bounce-dot 1.4s ease-in-out infinite;
+}
+
+.loading-dot:nth-child(2) { animation-delay: 0.2s; }
+.loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+/* Swipe hint animation */
+@keyframes swipe-hint-left {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(-12px); }
+}
+
+@keyframes swipe-hint-right {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(12px); }
+}
