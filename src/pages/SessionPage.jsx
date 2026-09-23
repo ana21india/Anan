@@ -97,7 +97,9 @@ export default function SessionPage() {
       } else if (!hasA) {
         setView(VIEW.WAITING_FOR_PARTNER)
       } else {
-        triggerGeneration(sess, prefs)
+        // Only A generates. If B generated too, each partner would swipe a
+        // separate set of rows and could never land on the same one.
+        setView(VIEW.GENERATING)
       }
     }
   }, [role])
@@ -126,11 +128,13 @@ export default function SessionPage() {
       const mappedA = mapPrefs(prefA)
       const mappedB = mapPrefs(prefB)
 
-      await updateSessionStatus(sess.id, 'swiping')
       const { titles: raw, brief: b } = await generateTitles(mappedA, mappedB)
       setBrief(b)
 
       const stored = await storeTitles(sess.id, 1, raw)
+      // Flip the status only once the rows exist — B is waiting on this
+      // event to load the deck, and an early flip leaves it with nothing.
+      await updateSessionStatus(sess.id, 'swiping')
       setTitles(stored)
       setView(VIEW.SWIPING)
     } catch (err) {
@@ -161,11 +165,11 @@ export default function SessionPage() {
 
       const seenIds = [...new Set([...swipesA, ...swipesB].map(s => s.session_titles?.tmdb_id).filter(Boolean))]
 
-      await updateSessionStatus(sess.id, 'swiping_r2', { round: 2 })
       const { titles: raw, brief: b } = await generateRound2Titles(mapPrefs(prefA), mapPrefs(prefB), likedA, likedB, seenIds)
       setBrief(b)
 
       const stored = await storeTitles(sess.id, 2, raw)
+      await updateSessionStatus(sess.id, 'swiping_r2', { round: 2 })
       setTitles(stored)
       setView(VIEW.ROUND2_SWIPING)
     } catch (err) {
@@ -244,11 +248,13 @@ export default function SessionPage() {
         const hasA = prefs.some(p => p.partner === 'A')
         const hasB = prefs.some(p => p.partner === 'B')
 
-        if (hasA && hasB && view !== VIEW.GENERATING && view !== VIEW.SWIPING) {
+        if (role === 'A' && hasA && hasB && view !== VIEW.GENERATING && view !== VIEW.SWIPING) {
           const existing = await getTitles(session.id, 1)
           if (!existing.length) {
             triggerGeneration(session, prefs)
           }
+        } else if (role === 'B' && hasA && hasB && view === VIEW.WAITING_FOR_PARTNER) {
+          setView(VIEW.GENERATING)
         } else if (role === 'A' && hasB && view === VIEW.PARTNER_A_SUBMITTED) {
           setView(VIEW.GENERATING)
         }
@@ -291,9 +297,12 @@ export default function SessionPage() {
 
     if (currentRound >= 2) {
       await updateSessionStatus(session.id, 'final')
-    } else {
+    } else if (role === 'A') {
       const prefs = await getPreferences(session.id)
       await triggerRound2(session, prefs)
+    } else {
+      // B waits for A's round 2 deck, for the same reason as round 1.
+      setView(VIEW.ROUND2_GENERATING)
     }
   }
 

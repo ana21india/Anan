@@ -100,15 +100,26 @@ export async function recordSwipe(sessionId, partner, titleId, liked) {
 }
 
 export async function checkForMatch(sessionId, titleId) {
+  // Compare on tmdb_id rather than the row id: a session can hold more than
+  // one row for the same film, and liking it from two different rows is
+  // still both partners agreeing on the same film.
+  const { data: row, error: rowErr } = await supabase
+    .from('session_titles')
+    .select('tmdb_id')
+    .eq('id', titleId)
+    .single()
+
+  if (rowErr) throw rowErr
+
   const { data, error } = await supabase
     .from('swipes')
-    .select('partner')
+    .select('partner, session_titles!inner(tmdb_id)')
     .eq('session_id', sessionId)
-    .eq('title_id', titleId)
     .eq('liked', true)
+    .eq('session_titles.tmdb_id', row.tmdb_id)
 
   if (error) throw error
-  return data?.length === 2
+  return new Set((data || []).map(s => s.partner)).size === 2
 }
 
 export async function getSwipes(sessionId, partner) {
